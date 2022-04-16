@@ -4,80 +4,103 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.aeonbits.owner.ConfigFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 import java.time.Duration;
+import java.util.Set;
 
-    public class OtusTest {
-        private final Logger logger = (Logger) LogManager.getLogger(OtusTest.class);
-        private WebDriver driver;
-        private final IServerConfiguration serverConfiguration  = ConfigFactory.create(IServerConfiguration.class);
 
-    @Before
-    public void startUp(){
-        WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-        logger.info("Logger on");
-    }
-    @After
-    public void end() {
-            if (driver != null)
-                driver.quit();
+public class OtusTest {
+  private final Logger logger = (Logger) LogManager.getLogger(OtusTest.class);
+  private WebDriver driver;
+  private final IServerConfiguration serverConfiguration = ConfigFactory.create(IServerConfiguration.class);
 
-    }
-    @Test
-    public void headlessMode() {
-        ChromeOptions chromeOptions = new ChromeOptions();
-        chromeOptions.addArguments("headless");
-        driver = new ChromeDriver(chromeOptions);
-        driver.get("https://google.com");
+  private void creatorObjectDriver(ChromeOptions chromeOptions) {
+    driver = new ChromeDriver(chromeOptions);
+    driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+    logger.info("Logger on");
+  }
 
-    }
-    @Test
-    public void seeker() throws InterruptedException {
-        driver.get("https://duckduckgo.com");
-        driver.findElement(By.id("search_form_input_homepage")).sendKeys("OTUS.ru" + Keys.ENTER);
-        driver.findElement(By.cssSelector("div[id='r1-0'] a[class='result__a js-result-title-link']")).click();
-        Thread.sleep(3000);
-        driver.close();
-    }
-    @Test
-    public void chromeKioskMode() throws InterruptedException {
-        driver.get("https://demo.w3layouts.com/demos_new/template_demo/03-10-2020/photoflash-liberty-demo_Free/685659620/web/index.html?_ga=2.181802926.889871791.1632394818-2083132868.1632394818");
-        driver.findElement(By.cssSelector("a[title='Category 2']")).click();
-        driver.findElement(By.xpath("//a[@class='image-zoom']//div[@class='content-overlay']")).click();
-        Thread.sleep(3000);
-    }
-    @Test
-    public void getOtus ()throws InterruptedException{
-        driver.manage().window().maximize();
-        driver.get(serverConfiguration.url());
-        driver.findElement(By.xpath("//button[@class='header2__auth js-open-modal']")).click();
-        driver.findElement(By.cssSelector("input[placeholder='Электронная почта'][name='email'][type='text']")).clear();
-        driver.findElement(By.cssSelector("input[placeholder='Электронная почта'][name='email'][type='text']")).sendKeys(serverConfiguration.login());
-        driver.findElement(By.xpath("//input[@placeholder='Введите пароль']")).clear();
-        driver.findElement(By.xpath("//input[@placeholder='Введите пароль']")).sendKeys(serverConfiguration.password());
-        driver.findElement(By.xpath("//button[@class='new-button new-button_full new-button_blue new-button_md']")).click();
-        Thread.sleep(3000);
-//        driver.close();
-    }
-    @Test
-    public void outputIntoLogCookies()throws InterruptedException{
-        driver.get(serverConfiguration.url());
-        driver.manage().getCookies();
-        logger.info("g");
-        Thread.sleep(3000);
-//        driver.close();
+  @Before
+  public void startUp() {
+    WebDriverManager.chromedriver().setup();
+  }
 
+  @After
+  public void end() {
+    if (driver != null)
+        driver.quit();
+  }
+
+  @Test
+  public void headlessMode() {
+    ChromeOptions chromeOptions = new ChromeOptions();
+    chromeOptions.addArguments("headless");
+    creatorObjectDriver(chromeOptions);
+    driver.get("https://google.com");
+    WebElement logoGoggle = driver.findElement(By.cssSelector("img[alt=Google]"));
+    System.out.println(logoGoggle.isEnabled());
+    Assert.assertTrue("Google",logoGoggle.isDisplayed());
+
+  }
+
+  @Test
+  public void seeker() {
+    ChromeOptions chromeOptions = new ChromeOptions();
+    creatorObjectDriver(chromeOptions);
+    driver.get("https://duckduckgo.com");
+    driver.findElement(By.id("search_form_input_homepage")).sendKeys("Отус.ru" + Keys.ENTER);
+    WebElement aboutOtus = driver.findElement(By.cssSelector("[id='r1-0']"));
+    aboutOtus.isDisplayed();
+    Assert.assertTrue("Otus", aboutOtus.isDisplayed());
+  }
+
+  @Test
+  public void chromeKioskMode() {
+    ChromeOptions chromeOptions = new ChromeOptions();
+    chromeOptions.addArguments("--kiosk");
+    creatorObjectDriver(chromeOptions);
+    driver.get("https://demo.w3layouts.com/demos_new/template_demo/03-10-2020/photoflash-liberty-demo_Free/685659620/web/index.html?_ga=2.181802926.889871791.1632394818-2083132868.1632394818");
+    JavascriptExecutor jse = (JavascriptExecutor)driver;
+    jse.executeScript("window.scrollBy(0,250)");
+    driver.findElement(By.xpath("//li[@data-id='id-3']")).click();
+    driver.findElement(By.xpath("//div[@style='height: 640px; width: 640px;']")).click();
+    Assert.assertTrue("'height: 640px; width: 640px;'",true);
+  }
+
+  @Test
+  public void getOtus() {
+    driver = new ChromeDriver();
+    driver.manage().window().maximize();
+
+    driver.get(serverConfiguration.url());
+
+    By emailFieldLocator = By.xpath("//input[@type='text'][contains(@class,'email')]");
+    driver.findElement(By.xpath("//button[contains(@data-modal-id, 'new-log-reg')]")).click();
+
+    WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    webDriverWait.until(ExpectedConditions.presenceOfElementLocated(emailFieldLocator));
+
+    WebElement webLog = driver.findElement(emailFieldLocator);
+    webLog.sendKeys(serverConfiguration.login());
+    Assert.assertEquals("Logging of user doesn't correct", serverConfiguration.login(), webLog.getAttribute("value"));
+
+    Set<Cookie> cookies = driver.manage().getCookies();
+    for(Cookie cookie: cookies) {
+      logger.info(cookie.getName() + " : " + cookie.getValue());
     }
-    }
+
+  }
+
+}
 
 
 
